@@ -1,0 +1,26 @@
+{
+  "name": "autoscribe-sarvam-tts",
+  "version": "2.0.0",
+  "description": "AutoScribe AI-Powered Exam Aid with Voice Accessibility and MySQL Persistence",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "db:start": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Start-Process -FilePath './mysql-server/bin/mariadbd.exe' -ArgumentList '--datadir=mysql-server/data --port=3306 --console' -WindowStyle Hidden\"",
+    "migrate": "node scripts/init-db.js",
+    "seed": "node scripts/seed.js",
+    "create-teacher": "node scripts/create-teacher.js",
+    "audit": "node scripts/verify-persistence-audit.js",
+    "test": "node test-all-requirements.js && node test-login-flow-isolated.js && node test-exam-flow.js && node test-backend-integration.js",
+    "test:voice": "node test-voice-live-simulation.js"
+  },
+  "dependencies": {
+    "@google-cloud/speech": "^8.0.1",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.24.6",
+    "sqlite3": "^6.0.1"
+  }
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submission Confirmation - AutoScribe</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header class="app-header" role="banner">
+    <a href="index.html" class="brand-logo">
+      <div class="brand-icon" aria-hidden="true">A</div>
+      <span>AutoScribe</span>
+    </a>
+  </header>
+
+  <main class="main-content" role="main" style="max-width: 720px; margin-top: 2.5rem;">
+    <div class="card" style="text-align: center; padding: 3rem 2.2rem; border: 2px solid var(--accent-teal); box-shadow: 0 10px 40px rgba(13, 148, 136, 0.2);">
+      <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+      <h1 class="card-title" style="font-size: 2.3rem; color: var(--accent-teal); margin-bottom: 0.75rem;">Examination Successfully Submitted!</h1>
+      <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.7;">
+        Your answers have been timestamped, encrypted, and saved securely to the SQLite central database.
+      </p>
+
+      <div id="receiptContainer" style="background: var(--bg-secondary); padding: 1.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-card); border-left: 5px solid var(--accent-gold); text-align: left; margin-bottom: 2.2rem; font-family: var(--font-mono); line-height: 1.8; font-size: 1.1rem; color: var(--text-primary);">
+        <p style="margin-bottom: 0.5rem;"><strong>Submission ID:</strong> <span id="subId" style="color: var(--accent-gold); font-weight: 700;">SUB-1029384</span></p>
+        <p style="margin-bottom: 0.5rem;"><strong>Student Details:</strong> <span id="subStudent" style="color: var(--text-primary); font-weight: 700;">Alex Johnson (STD-1001)</span></p>
+        <p style="margin-bottom: 0.5rem;"><strong>Submission Timestamp:</strong> <span id="subTime" style="color: var(--text-secondary);">2026-08-13 14:00:00</span></p>
+        <p style="margin-bottom: 0;"><strong>Status:</strong> <span style="color: var(--accent-teal); font-weight: 800; background: rgba(13, 148, 136, 0.12); padding: 0.2rem 0.6rem; border-radius: 4px; border: 1px solid var(--accent-teal);">Verified &amp; Locked</span></p>
+      </div>
+
+      <div style="display: flex; gap: 1.25rem; justify-content: center; flex-wrap: wrap;">
+        <a href="dashboard.html" class="btn btn-primary btn-large" style="min-width: 240px;">📋 Return to Dashboard</a>
+        <a href="index.html" class="btn btn-secondary btn-large" style="border: 2px solid var(--accent-gold); min-width: 200px;">🏠 Main Menu</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/speech-engine.js"></script>
+  <script src="js/voice-controller.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      AutoScribeSpeech.init();
+
+      const subData = sessionStorage.getItem('autoscribe_last_submission');
+      if (subData) {
+        try {
+          const sub = JSON.parse(subData);
+          if (sub.submissionId) document.getElementById('subId').textContent = sub.submissionId;
+          if (sub.studentName || sub.studentId) {
+            document.getElementById('subStudent').textContent = `${sub.studentName || 'Student'} (${sub.studentId || ''})`;
+          }
+          if (sub.submittedAt) document.getElementById('subTime').textContent = new Date(sub.submittedAt).toLocaleString();
+        } catch (e) {}
+      } else {
+        const user = AutoScribeApp.currentUser || JSON.parse(sessionStorage.getItem('autoscribe_user') || localStorage.getItem('autoscribe_user') || '{}');
+        const name = user.name || user.studentName || 'Student';
+        const roll = user.rollNumber || user.studentId || '';
+        if (name || roll) {
+          document.getElementById('subStudent').textContent = `${name}${roll ? ` (${roll})` : ''}`;
+        }
+      }
+
+      setTimeout(() => {
+        AutoScribeSpeech.speak("Congratulations! Your examination has been successfully submitted and saved securely. You may now return to the dashboard.");
+      }, 500);
+    });
+  </script>
+</body>
+</html>

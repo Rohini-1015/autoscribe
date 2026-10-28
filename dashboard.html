@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - AutoScribe</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header class="app-header" role="banner">
+    <a href="index.html" class="brand-logo" aria-label="AutoScribe Home Page">
+      <div class="brand-icon" aria-hidden="true">A</div>
+      <span>AutoScribe</span>
+    </a>
+    <nav class="header-nav" role="navigation">
+      <span id="userDisplay" style="font-weight: 700; color: var(--accent-teal); margin-right: 1rem;">Student Dashboard</span>
+      <button id="toggleThemeBtn" class="btn btn-secondary" aria-label="Toggle Theme (Shortcut: Alt + T)">🌓 Theme</button>
+      <button id="toggleContrastBtn" class="btn btn-secondary" aria-label="Toggle High Contrast Mode">👁️ High Contrast</button>
+      <button onclick="AutoScribeApp.logout()" class="btn btn-danger">Log Out</button>
+    </nav>
+  </header>
+
+  <main class="main-content" role="main">
+    <div class="welcome-banner">
+      <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(13, 148, 136, 0.15); color: var(--accent-teal-light); padding: 0.35rem 0.85rem; border-radius: 50px; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.75rem; border: 1px solid var(--accent-teal);">
+        📋 Active Student Examination Roster
+      </div>
+      <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem; color: var(--text-primary);">Interactive Student Examination Dashboard</h1>
+      <p style="font-size: 1.15rem; color: var(--text-secondary); line-height: 1.7;">The voice assistant introduces each subject sequentially. Say <strong>"Start"</strong> or <strong>"Yes"</strong> to begin an exam, or <strong>"Next subject"</strong> to move forward.</p>
+    </div>
+
+    <!-- Voice Control Bar -->
+    <div class="voice-bar">
+      <div class="voice-status-indicator">
+        <div class="status-dot active"></div>
+        <span id="dashboardStatusText">🎙️ Hands-Free Course Assistant Initializing...</span>
+      </div>
+    </div>
+
+    <!-- Active Exams List -->
+    <section class="card" aria-labelledby="exams-heading">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h2 id="exams-heading" class="card-title" style="margin-bottom: 0;">📖 Available Scheduled Examinations</h2>
+        <span style="color: var(--accent-gold); font-weight: 700;">6 Subjects Available</span>
+      </div>
+      <div id="examsListContainer">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- General Instructions -->
+    <section class="card" aria-labelledby="instructions-heading">
+      <h2 id="instructions-heading" class="card-title">ℹ️ Exam Guidelines for Visually Impaired Candidates</h2>
+      <ul style="padding-left: 1.5rem; line-height: 2; font-size: 1.1rem; color: var(--text-secondary);">
+        <li>The AI reads each subject clearly with Sarvam AI voices.</li>
+        <li>Say <strong>"Start"</strong>, <strong>"Yes"</strong>, or <strong>"Start this exam"</strong> to begin a subject exam.</li>
+        <li>Say <strong>"Next subject"</strong> or <strong>"Move to next"</strong> to listen to the next subject details.</li>
+        <li>Say <strong>"Read question"</strong> anytime during the exam to hear the question statement again.</li>
+        <li>Say <strong>"Start answer"</strong> to begin continuous voice dictation in Write Mode.</li>
+        <li>Say <strong>"Read my answer"</strong> to verify your recorded response.</li>
+        <li>Say <strong>"Submit exam"</strong> when you finish writing.</li>
+      </ul>
+    </section>
+  </main>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/speech-engine.js"></script>
+  <script src="js/voice-controller.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      AutoScribeSpeech.init();
+      // Ensure local database is refreshed with school subjects
+      AutoScribeDB.initMockDatabase();
+      const exams = await AutoScribeDB.getExams();
+      const container = document.getElementById('examsListContainer');
+
+      if (!exams || exams.length === 0) {
+        container.innerHTML = `<p>No active exams available at this time.</p>`;
+        AutoScribeSpeech.speak("No active exams available.");
+        return;
+      }
+
+      container.innerHTML = exams.map((exam, idx) => `
+        <div id="examCard_${idx}" class="card" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem; transition: all 0.3s ease; border: 2px solid var(--border-card);">
+          <div style="flex: 1; min-width: 280px;">
+            <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.6rem;">
+              <span style="background: var(--accent-teal); color: #fff; padding: 0.3rem 0.85rem; border-radius: 6px; font-size: 0.95rem; font-weight: 700;">Subject ${idx + 1}</span>
+              <h3 style="font-size: 1.55rem; color: #ffffff; margin: 0; font-weight: 800;">${exam.title}</h3>
+            </div>
+            <p style="color: var(--text-secondary); margin: 0.5rem 0 0.25rem 0; font-size: 1.1rem;">
+              Duration: <strong style="color: var(--accent-gold);">1.5 Hours (${exam.durationMinutes} Mins)</strong> | Total Questions: <strong style="color: var(--accent-gold);">${exam.totalQuestions}</strong>
+            </p>
+            ${exam.structure ? `<div style="color: var(--text-muted); font-size: 1rem; margin-top: 0.4rem;">📋 ${exam.structure}</div>` : ''}
+          </div>
+          <div>
+            <a href="exam.html?id=${exam.id}" class="btn btn-primary btn-large" style="white-space: nowrap; padding: 0.85rem 2rem; min-width: 170px;">
+              ▶️ Start
+            </a>
+          </div>
+        </div>
+      `).join('');
+
+      let currentCourseIndex = 0;
+
+      const updateStatusDisplay = (htmlMessage) => {
+        const statusEl = document.getElementById('dashboardStatusText');
+        if (statusEl) {
+          statusEl.innerHTML = htmlMessage;
+        }
+      };
+
+      const highlightActiveCard = (index) => {
+        exams.forEach((_, i) => {
+          const card = document.getElementById(`examCard_${i}`);
+          if (card) {
+            if (i === index) {
+              card.style.borderColor = 'var(--accent-gold)';
+              card.style.boxShadow = '0 0 25px rgba(245, 158, 11, 0.35)';
+              card.style.backgroundColor = 'rgba(245, 158, 11, 0.05)';
+            } else {
+              card.style.borderColor = 'var(--border-card)';
+              card.style.boxShadow = 'none';
+              card.style.backgroundColor = 'var(--bg-card)';
+            }
+          }
+        });
+      };
+
+      const isStartConfirmation = (text, cmd) => {
+        if (cmd === 'USER_CONFIRM_OKAY' || cmd === 'CONFIRM_SUBMIT' || cmd === 'START_ANSWER') return true;
+        const lower = (text || '').toLowerCase().trim();
+        return /\b(start|yes|yeah|yep|sure|start this|start this exam|begin|open|confirm|launch|ready|ok|okay)\b/.test(lower);
+      };
+
+      const isNextCourseRequest = (text, cmd) => {
+        if (cmd === 'NEXT_QUESTION') return true;
+        const lower = (text || '').toLowerCase().trim();
+        return /\b(next|next subject|next course|move to next|move to next subject|skip|pass|no|repeat|change|later|following)\b/.test(lower);
+      };
+
+      const announceCourse = (index) => {
+        if (index >= exams.length) {
+          index = 0;
+        }
+        currentCourseIndex = index;
+        const exam = exams[currentCourseIndex];
+
+        highlightActiveCard(currentCourseIndex);
+
+        const questionBreakdown = '5 two-mark questions and 2 ten-mark questions, total 7 questions.';
+        const promptText = `Subject ${currentCourseIndex + 1}: ${exam.title}. Duration 1.5 hours. ${questionBreakdown} Can I start this ${exam.title} exam or move to the next subject?`;
+
+        updateStatusDisplay(`🎙️ <strong>Reading Subject ${currentCourseIndex + 1}: ${exam.title}</strong> — "Can I start this ${exam.title} exam or move to the next subject?"`);
+
+        AutoScribeSpeech.speak(promptText, () => {
+          AutoScribeSpeech.startListening(
+            (rawText) => handleVoiceInput(rawText),
+            (cmd) => handleCommandInput(cmd)
+          );
+        });
+      };
+
+      const handleVoiceInput = (rawText) => {
+        if (!rawText || !rawText.trim()) return;
+        const text = rawText.trim();
+        console.log(`Dashboard Voice Input: "${text}"`);
+
+        const exam = exams[currentCourseIndex];
+
+        if (isStartConfirmation(text, null)) {
+          updateStatusDisplay(`🚀 <strong>Starting ${exam.title}...</strong> Opening examination session.`);
+          AutoScribeSpeech.speak(`Starting ${exam.title} exam. Opening exam.`, () => {
+            window.location.href = `exam.html?id=${exam.id}`;
+          });
+          return;
+        }
+
+        if (isNextCourseRequest(text, null)) {
+          currentCourseIndex++;
+          announceCourse(currentCourseIndex);
+          return;
+        }
+
+        // Check if student directly names a subject
+        const lower = text.toLowerCase();
+        const matchedIndex = exams.findIndex(e => lower.includes(e.title.toLowerCase()));
+        if (matchedIndex !== -1) {
+          const matchedExam = exams[matchedIndex];
+          if (matchedIndex === currentCourseIndex) {
+            updateStatusDisplay(`🚀 <strong>Starting ${matchedExam.title}...</strong> Opening examination session.`);
+            AutoScribeSpeech.speak(`Starting ${matchedExam.title} exam. Opening exam.`, () => {
+              window.location.href = `exam.html?id=${matchedExam.id}`;
+            });
+          } else {
+            announceCourse(matchedIndex);
+          }
+          return;
+        }
+
+        // Response unclear
+        AutoScribeSpeech.speak(`Can I start this ${exam.title} exam or move to the next subject?`, () => {
+          AutoScribeSpeech.startListening(
+            (t) => handleVoiceInput(t),
+            (c) => handleCommandInput(c)
+          );
+        });
+      };
+
+      const handleCommandInput = (cmd) => {
+        console.log(`Dashboard Voice Command: ${cmd}`);
+        const exam = exams[currentCourseIndex];
+
+        if (isStartConfirmation('', cmd)) {
+          updateStatusDisplay(`🚀 <strong>Starting ${exam.title}...</strong> Opening examination session.`);
+          AutoScribeSpeech.speak(`Starting ${exam.title} exam. Opening exam.`, () => {
+            window.location.href = `exam.html?id=${exam.id}`;
+          });
+          return;
+        }
+
+        if (isNextCourseRequest('', cmd)) {
+          currentCourseIndex++;
+          announceCourse(currentCourseIndex);
+          return;
+        }
+      };
+
+      let dashboardStarted = false;
+      const startDashboardVoice = () => {
+        if (dashboardStarted) return;
+        dashboardStarted = true;
+        announceCourse(0);
+      };
+
+      setTimeout(startDashboardVoice, 400);
+
+      const triggerDashboardGesture = () => {
+        AutoScribeSpeech.getAudioContext();
+        startDashboardVoice();
+      };
+
+      document.body.addEventListener('click', triggerDashboardGesture);
+      document.body.addEventListener('keydown', triggerDashboardGesture);
+    });
+  </script>
+</body>
+</html>

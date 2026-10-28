@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Educator & Admin Portal - AutoScribe</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Accessible Navigation Header -->
+  <header class="app-header" role="banner">
+    <a href="index.html" class="brand-logo" aria-label="AutoScribe Home">
+      <div class="brand-icon" id="brandIcon" aria-hidden="true">🎙️</div>
+      <span>AutoScribe <span style="font-size: 0.85rem; color: var(--accent-gold); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-left: 0.5rem; background: rgba(245, 158, 11, 0.15); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--accent-gold);">Teacher Portal</span></span>
+    </a>
+    <nav class="header-nav" role="navigation" aria-label="Admin Navigation">
+      <button id="toggleContrastBtn" class="btn btn-secondary" aria-label="Toggle High Contrast Mode">👁️ High Contrast</button>
+      <a href="dashboard.html" class="btn btn-secondary">📋 Student Dashboard</a>
+      <a href="index.html" class="btn btn-secondary">🚪 Exit Portal</a>
+    </nav>
+  </header>
+
+  <main class="main-content" role="main">
+    <!-- Welcome & Overview Banner -->
+    <div class="welcome-banner" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1.5rem; margin-bottom: 2rem;">
+      <div>
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(13, 148, 136, 0.12); border: 1px solid var(--accent-teal); padding: 0.35rem 0.85rem; border-radius: 999px; font-size: 0.85rem; font-weight: 700; color: var(--accent-teal); margin-bottom: 0.75rem;">
+          <span>🔒 Secure Educator Console</span>
+        </div>
+        <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 800;">
+          Educator &amp; Exam Coordinator Portal
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 1.1rem; max-width: 720px; line-height: 1.6;">
+          Manage question banks, inspect real-time voice-dictated student submissions, review word-for-word transcriptions, and download academic verification records.
+        </p>
+      </div>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.5rem; text-align: center; min-width: 130px;">
+          <span style="display: block; font-size: 1.75rem; font-weight: 800; color: var(--accent-gold);" id="examCountMetric">6</span>
+          <span style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Active Exams</span>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.5rem; text-align: center; min-width: 130px;">
+          <span style="display: block; font-size: 1.75rem; font-weight: 800; color: var(--accent-teal);" id="submissionCountMetric">0</span>
+          <span style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Submissions</span>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.5rem; text-align: center; min-width: 130px;">
+          <span style="display: block; font-size: 1.75rem; font-weight: 800; color: var(--accent-gold);">SQLite</span>
+          <span style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Persistence</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Exam Form -->
+    <section class="card" aria-labelledby="create-exam-heading" style="margin-bottom: 2rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h2 id="create-exam-heading" class="card-title" style="margin: 0; font-size: 1.4rem; display: flex; align-items: center; gap: 0.6rem;">
+          <span aria-hidden="true" style="color: var(--accent-gold);">➕</span> Create New Voice Examination
+        </h2>
+        <span style="font-size: 0.85rem; color: var(--text-secondary);">TTS synthesized reading &amp; voice transcription ready</span>
+      </div>
+
+      <form id="createExamForm" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="examTitle" class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Exam Title / Subject Name <span style="color: var(--accent-gold);">*</span></label>
+            <input type="text" id="examTitle" class="form-control" placeholder="e.g., M.Sc Computer Science - Operating Systems" required style="padding: 0.9rem 1.2rem; font-size: 1.05rem;">
+          </div>
+          <div class="form-group">
+            <label for="examCode" class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Course Code <span style="color: var(--accent-gold);">*</span></label>
+            <input type="text" id="examCode" class="form-control" placeholder="e.g., CS-202" required style="padding: 0.9rem 1.2rem; font-size: 1.05rem; font-family: 'JetBrains Mono', monospace;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="examDuration" class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Exam Duration (Minutes) <span style="color: var(--accent-gold);">*</span></label>
+          <input type="number" id="examDuration" class="form-control" value="60" min="15" max="180" required style="padding: 0.9rem 1.2rem; font-size: 1.05rem;">
+          <small style="color: var(--text-secondary); display: block; margin-top: 0.35rem;">Standard candidate accommodation allows 15 to 180 minutes.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="q1Text" class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Question 1 Statement <span style="color: var(--accent-gold);">*</span></label>
+          <textarea id="q1Text" class="form-control" rows="4" placeholder="Enter question statement clearly. This text will be synthesized by the voice engine for candidates..." required style="padding: 1rem 1.2rem; font-size: 1.05rem; line-height: 1.6; resize: vertical;"></textarea>
+          <small style="color: var(--text-secondary); display: block; margin-top: 0.35rem;">Tip: Use clear punctuation for natural speech pauses when read by the voice synthesizer.</small>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.5rem;">
+          <button type="reset" class="btn btn-secondary">Clear Form</button>
+          <button type="submit" class="btn btn-primary btn-large">💾 Publish Exam to Portal</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Submissions View -->
+    <section class="card" aria-labelledby="submissions-heading">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 id="submissions-heading" class="card-title" style="margin: 0; font-size: 1.4rem; display: flex; align-items: center; gap: 0.6rem;">
+            <span aria-hidden="true" style="color: var(--primary-teal);">📥</span> Submitted Student Examinations
+          </h2>
+          <p style="color: var(--text-secondary); margin: 0.35rem 0 0 0; font-size: 0.95rem;">
+            Review verbatim voice dictations, timestamps, and generate official text transcripts for evaluation.
+          </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button id="refreshSubmissionsBtn" class="btn btn-secondary" onclick="AutoScribeAdmin.renderSubmissions()">🔄 Refresh Records</button>
+          <button id="exportAllBtn" class="btn btn-secondary" onclick="AutoScribeAdmin.exportAllSubmissions()">📊 Export All (JSON)</button>
+        </div>
+      </div>
+      
+      <div class="table-container">
+        <table class="data-table" aria-label="Student Examination Submissions">
+          <thead>
+            <tr>
+              <th scope="col">Submission ID</th>
+              <th scope="col">Candidate Details</th>
+              <th scope="col">Exam ID</th>
+              <th scope="col">Submitted At</th>
+              <th scope="col" style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="submissionsTableBody">
+            <!-- Rendered by admin.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/speech-engine.js"></script>
+  <script src="js/voice-controller.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

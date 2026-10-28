@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoScribe – Autonomous Voice Exam Aid for Blind Students</title>
+  <meta name="description" content="An accessible, 100% hands-free voice-guided examination platform for blind and visually impaired students using Speech-to-Text and AI voice processing.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Accessible Navigation Header -->
+  <header class="app-header" role="banner">
+    <a href="index.html" class="brand-logo" aria-label="AutoScribe Home Page">
+      <div class="brand-icon" aria-hidden="true">A</div>
+      <span>AutoScribe</span>
+    </a>
+    <nav class="header-nav" role="navigation" aria-label="Main Navigation">
+      <button id="toggleThemeBtn" class="btn btn-secondary" aria-label="Toggle Theme (Shortcut: Alt + T)">
+        🌓 Theme
+      </button>
+      <button id="toggleContrastBtn" class="btn btn-secondary" aria-label="Toggle High Contrast Mode (Shortcut: Alt + H)">
+        👁️ High Contrast
+      </button>
+      <button id="voiceAssistBtn" class="btn btn-secondary" aria-label="Audio Help Guide">
+        🔊 Voice Guide
+      </button>
+      <button onclick="AutoScribeApp.navigateToLogin()" class="btn btn-primary" aria-label="Student Login Page">Student Login</button>
+      <a href="admin.html" class="btn btn-secondary">Teacher Portal</a>
+    </nav>
+  </header>
+
+  <main class="main-content" role="main">
+    
+    <!-- Hero Banner -->
+    <section class="welcome-banner" aria-labelledby="hero-heading">
+      <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(245, 158, 11, 0.15); color: var(--accent-gold); padding: 0.4rem 1rem; border-radius: 50px; font-weight: 700; font-size: 0.95rem; margin-bottom: 1.2rem; border: 1px solid var(--accent-gold);">
+        🎙️ 100% Hands-Free Accessible Audio System
+      </div>
+      <h1 id="hero-heading" style="font-size: 2.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.8rem; letter-spacing: -0.02em;">
+        🎓 AutoScribe Autonomous Voice Exam Portal
+      </h1>
+      <p style="font-size: 1.25rem; max-width: 820px; color: var(--text-secondary); line-height: 1.75;">
+        Designed for 100% independent examination writing by blind and visually impaired students. Zero visual dependency. 
+        Simply listen to audio prompts and speak commands naturally to navigate, write, and submit your exam.
+      </p>
+      <div style="display: flex; gap: 1.25rem; margin-top: 1.8rem; flex-wrap: wrap;">
+        <button onclick="AutoScribeApp.navigateToLogin()" class="btn btn-primary btn-large" aria-label="Start Examination Session Now" style="min-width: 300px;">
+          🚀 Launch Voice Login (Say "Login")
+        </button>
+        <button onclick="AutoScribeApp.navigateToExam()" class="btn btn-secondary btn-large" aria-label="Direct Exam Start" style="border: 2px solid var(--accent-gold); min-width: 300px;">
+          ▶️ Direct Exam Launch (Say "Start Exam")
+        </button>
+      </div>
+    </section>
+
+    <!-- Voice Control Bar -->
+    <div class="voice-bar">
+      <div class="voice-status-indicator">
+        <div class="status-dot active" id="statusDot"></div>
+        <span id="speechStatusText">🎙️ Continuous Hands-Free Listening Active (Say "Login" or "Start Exam")</span>
+      </div>
+    </div>
+
+    <!-- Click / Tap to activate audio banner if autoplay is blocked -->
+    <div id="voiceActivationPrompt" class="card" style="margin-top: 1rem; border: 2px dashed var(--accent-gold); background: rgba(245, 158, 11, 0.08); text-align: center; cursor: pointer; padding: 1.25rem; border-radius: var(--radius-md);" role="button" tabindex="0" aria-label="Activate Voice Assistant and Microphone">
+      <p style="font-size: 1.2rem; font-weight: 700; color: var(--accent-gold); margin: 0;">
+        🔊 Click anywhere or press any key to activate Voice Assistant & Microphone
+      </p>
+    </div>
+
+    <!-- Voice Command Quick Reference -->
+    <section class="card" aria-labelledby="command-guide-title">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h2 id="command-guide-title" class="card-title" style="margin-bottom: 0;">🗣️ Core Navigation Voice Commands</h2>
+        <span style="color: var(--accent-gold); font-weight: 700; font-size: 1rem;">Speak clearly into your microphone</span>
+      </div>
+      <div class="command-grid" role="list">
+        <div class="command-card" role="listitem">
+          <div class="command-phrase">"Login"</div>
+          <div class="command-desc">Opens Student Voice Login Screen</div>
+        </div>
+        <div class="command-card" role="listitem">
+          <div class="command-phrase">"Start Exam"</div>
+          <div class="command-desc">Directly launches active examination session</div>
+        </div>
+        <div class="command-card" role="listitem">
+          <div class="command-phrase">"Read question"</div>
+          <div class="command-desc">Reads question statement aloud via Text-to-Speech</div>
+        </div>
+        <div class="command-card" role="listitem">
+          <div class="command-phrase">"Start answer"</div>
+          <div class="command-desc">Activates continuous voice dictation in Write Mode</div>
+        </div>
+        <div class="command-card" role="listitem">
+          <div class="command-phrase">"Read my answer"</div>
+          <div class="command-desc">Verifies transcribed text by reading back answer</div>
+        </div>
+        <div class="command-card" role="listitem">
+          <div class="command-phrase">"Submit exam"</div>
+          <div class="command-desc">Triggers secure submission with voice confirmation</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem; border-top: var(--glass-border); color: var(--text-muted);" role="contentinfo">
+    <p>AutoScribe Project &copy; 2026 | M.Sc Computer Science Autonomous Accessibility Initiative</p>
+  </footer>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/speech-engine.js"></script>
+  <script src="js/voice-controller.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      AutoScribeSpeech.init();
+
+      let voiceStarted = false;
+
+      const hideActivationPrompt = () => {
+        const prompt = document.getElementById('voiceActivationPrompt');
+        if (prompt) prompt.style.display = 'none';
+      };
+
+      const activateListening = () => {
+        hideActivationPrompt();
+        AutoScribeSpeech.startListening(
+          (text) => handleVoiceInput(text),
+          (cmd) => handleCommandInput(cmd)
+        );
+      };
+
+      const startAutonomousVoice = (force = false) => {
+        AutoScribeSpeech.getAudioContext();
+        try { if (window.speechSynthesis) window.speechSynthesis.resume(); } catch (_) {}
+
+        if (voiceStarted && !force) return;
+        voiceStarted = true;
+        hideActivationPrompt();
+
+        // 1. Start listening immediately so microphone is hot and detects commands & barge-in
+        activateListening();
+
+        // 2. Play greeting / orientation announcement
+        AutoScribeSpeech.speak(
+          "Welcome to AutoScribe, Autonomous Voice Exam Portal for Blind Students. Microphone is active. Simply say Login to sign in, or say Start Exam to begin your examination immediately.",
+          () => {
+            // Keep microphone listening after speech finishes
+            activateListening();
+          }
+        );
+      };
+
+      const handleVoiceInput = (rawText) => {
+        if (!rawText) return;
+        const lower = rawText.toLowerCase().trim();
+        console.log(`Index Voice Input: "${lower}"`);
+
+        const statusText = document.getElementById('speechStatusText');
+        if (statusText) {
+          statusText.innerHTML = `🗣️ Heard: <strong>"${rawText}"</strong>`;
+        }
+
+        if (/\b(login|log\s*in|student\s*login|open\s*login|go\s*to\s*login|sign\s*in)\b/i.test(lower)) {
+          AutoScribeSpeech.playChime('confirm');
+          AutoScribeSpeech.stopSpeaking();
+          AutoScribeSpeech.stopListening();
+          AutoScribeApp.navigateToLogin();
+        } else if (/\b(start\s*(the\s*)?exam(ination)?|begin\s*(the\s*)?exam(ination)?|open\s*(the\s*)?exam(ination)?|launch\s*(the\s*)?exam(ination)?)\b/i.test(lower)) {
+          AutoScribeSpeech.playChime('confirm');
+          AutoScribeSpeech.stopSpeaking();
+          AutoScribeSpeech.stopListening();
+          AutoScribeApp.navigateToExam();
+        } else if (/\b(teacher|admin|teacher\s*portal|admin\s*portal|teacher\s*login)\b/i.test(lower)) {
+          AutoScribeSpeech.playChime('confirm');
+          AutoScribeSpeech.stopSpeaking();
+          AutoScribeSpeech.stopListening();
+          window.location.href = "admin.html";
+        } else if (/\b(dashboard|go\s*to\s*dashboard)\b/i.test(lower)) {
+          AutoScribeSpeech.playChime('confirm');
+          AutoScribeSpeech.stopSpeaking();
+          AutoScribeSpeech.stopListening();
+          window.location.href = "dashboard.html";
+        } else if (/\b(high\s*contrast|toggle\s*contrast)\b/i.test(lower)) {
+          AutoScribeApp.toggleHighContrast();
+        } else if (/\b(voice\s*guide|help|audio\s*guide|repeat)\b/i.test(lower)) {
+          startAutonomousVoice(true);
+        }
+      };
+
+      const handleCommandInput = (cmd) => {
+        console.log(`Index Voice Command: ${cmd}`);
+        if (cmd === 'START_ANSWER' || cmd === 'USER_CONFIRM_OKAY') {
+          AutoScribeApp.navigateToLogin();
+        }
+      };
+
+      // Wire header buttons
+      const voiceAssistBtn = document.getElementById('voiceAssistBtn');
+      if (voiceAssistBtn) {
+        voiceAssistBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          startAutonomousVoice(true);
+        });
+      }
+
+      const toggleContrastBtn = document.getElementById('toggleContrastBtn');
+      if (toggleContrastBtn) {
+        toggleContrastBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          AutoScribeApp.toggleHighContrast();
+        });
+      }
+
+      // Trigger voice orientation immediately on load
+      setTimeout(() => startAutonomousVoice(false), 400);
+
+      // Autoplay gesture handler for browser permissions
+      const triggerGesture = () => {
+        document.body.removeEventListener('click', triggerGesture);
+        document.body.removeEventListener('keydown', triggerGesture);
+        startAutonomousVoice(true);
+      };
+
+      document.body.addEventListener('click', triggerGesture);
+      document.body.addEventListener('keydown', triggerGesture);
+      const promptEl = document.getElementById('voiceActivationPrompt');
+      if (promptEl) promptEl.addEventListener('click', triggerGesture);
+    });
+  </script>
+</body>
+</html>

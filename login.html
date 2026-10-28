@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Login - AutoScribe</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header class="app-header" role="banner">
+    <a href="index.html" class="brand-logo" aria-label="AutoScribe Home Page">
+      <div class="brand-icon" aria-hidden="true">A</div>
+      <span>AutoScribe</span>
+    </a>
+    <nav class="header-nav" role="navigation">
+      <button id="toggleThemeBtn" class="btn btn-secondary" aria-label="Toggle Theme (Shortcut: Alt + T)">🌓 Theme</button>
+      <button id="toggleContrastBtn" class="btn btn-secondary" aria-label="Toggle High Contrast Mode">👁️ High Contrast</button>
+    </nav>
+  </header>
+
+  <main class="main-content" role="main" style="max-width: 680px; margin-top: 2.5rem;">
+    <div class="card" aria-labelledby="login-heading">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap;">
+        <h1 id="login-heading" class="card-title" style="margin-bottom: 0;">Student Voice Login</h1>
+        <span style="background: rgba(13, 148, 136, 0.15); color: var(--accent-teal-light); border: 1px solid var(--accent-teal); padding: 0.3rem 0.75rem; border-radius: 50px; font-weight: 700; font-size: 0.85rem;">
+          6-Step Guided Flow
+        </span>
+      </div>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 1.05rem;">Speak or type your credentials. The voice assistant will guide you step by step.</p>
+      
+      <!-- Visual Step Progress Tracker -->
+      <div class="step-progress-bar" role="progressbar" aria-label="Voice Login Steps">
+        <div id="stepVoice" class="step-item active">1. Voice</div>
+        <div id="stepRoll" class="step-item">2. Roll No</div>
+        <div id="stepConfirmRoll" class="step-item">3. Verify Roll</div>
+        <div id="stepName" class="step-item">4. Name</div>
+        <div id="stepConfirmName" class="step-item">5. Verify Name</div>
+        <div id="stepFinal" class="step-item">6. Start</div>
+      </div>
+
+      <!-- Voice Status Indicator with ARIA live region -->
+      <div class="voice-bar" style="margin-bottom: 1.6rem; border: 2px solid var(--accent-gold);">
+        <div class="voice-status-indicator">
+          <div class="status-dot active" id="statusDot" aria-hidden="true"></div>
+          <span id="voiceLoginState" role="status" aria-live="polite">Initializing Hands-Free Voice Login...</span>
+        </div>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <!-- Accessible Validation Error Display -->
+        <div id="loginErrorMsg" class="error-message" role="alert" aria-live="assertive" style="display: none; color: var(--accent-red); margin-bottom: 1.25rem; font-weight: 700; background: rgba(239, 68, 68, 0.12); padding: 0.85rem 1.15rem; border-radius: 8px; border: 1px solid var(--accent-red); font-size: 1.05rem;"></div>
+
+        <!-- 1. Roll Number Input (first per required order) -->
+        <div class="form-group">
+          <label for="studentIdInput" class="form-label" style="font-weight: 700; font-size: 1.15rem;">Roll Number</label>
+          <input type="text" id="studentIdInput" name="rollNumber" class="form-control" placeholder="e.g., 25ISR023" required aria-required="true" aria-describedby="studentIdVoiceHelp" style="font-size: 1.2rem; font-family: var(--font-mono); letter-spacing: 1px;">
+          <small id="studentIdVoiceHelp" class="sr-only">Say or type your roll number.</small>
+        </div>
+
+        <!-- 2. Student Name Input (second per required order) -->
+        <div class="form-group">
+          <label for="studentNameInput" class="form-label" style="font-weight: 700; font-size: 1.15rem;">Student Name</label>
+          <input type="text" id="studentNameInput" name="studentName" class="form-control" placeholder="e.g., Suresh Kumar" required aria-required="true" aria-describedby="studentNameVoiceHelp" style="font-size: 1.15rem;">
+          <small id="studentNameVoiceHelp" class="sr-only">Say or type your full student name.</small>
+        </div>
+
+        <!-- 3. Preferred Voice -->
+        <div class="form-group">
+          <label for="genderSelect" class="form-label" style="font-weight: 700; font-size: 1.15rem;">Preferred Voice</label>
+          <select id="genderSelect" class="form-control" style="font-size: 1.1rem; font-weight: 600;">
+            <option value="female">Female Voice</option>
+            <option value="male" selected>Male Voice</option>
+          </select>
+        </div>
+
+        <button type="submit" id="submitLoginBtn" class="btn btn-primary btn-large" style="width: 100%; margin-top: 0.5rem;">
+          🚀 Log In & Start Exam (Say "Login" or "Confirm")
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/speech-engine.js"></script>
+  <script src="js/voice-controller.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      AutoScribeSpeech.init();
+
+      let loginStateId = 0;
+      let retryCount = 0;
+      let currentLoginState = 'IDLE';
+      let selectedVoice = 'male';
+      let rollNumber = '';
+      let studentName = '';
+
+      // Load existing user details if logged in previously
+      if (AutoScribeApp.currentUser) {
+        studentName = AutoScribeApp.currentUser.name || AutoScribeApp.currentUser.studentName || '';
+        rollNumber = AutoScribeApp.currentUser.rollNumber || AutoScribeApp.currentUser.studentId || '';
+        if (studentName) document.getElementById('studentNameInput').value = studentName;
+        if (rollNumber) document.getElementById('studentIdInput').value = rollNumber;
+      }
+
+      const updateStatusDisplay = (htmlMessage) => {
+        const statusEl = document.getElementById('voiceLoginState');
+        if (statusEl) {
+          statusEl.innerHTML = htmlMessage;
+        }
+      };
+
+      const isYes = (text) => {
+        const lower = (text || '').toLowerCase().trim();
+        return /\b(yes|yeah|yep|sure|correct|right|okay|ok|confirm|true|perfect|is correct|that is correct|thats correct|that's correct)\b/i.test(lower);
+      };
+
+      const isNo = (text) => {
+        const lower = (text || '').toLowerCase().trim();
+        return /\b(no|nope|nah|incorrect|wrong|repeat|retry|change|not correct|false)\b/i.test(lower);
+      };
+
+      // Start STT for normal login states (voice selection, name, confirmations)
+      const startLoginListener = (currentGen) => {
+        if (currentGen !== loginStateId) return;
+        console.log("[LOGIN STT START]");
+        AutoScribeSpeech.startListening(
+          (rawText, isFinal) => handleSttResult(currentGen, rawText, isFinal),
+          null,  // null onCommand — exam commands must never fire on login page
+          { lang: 'en-IN', continuous: false, interimResults: true, isRollMode: false }
+        );
+      };
+
+      // Start STT specifically for LISTEN_ROLL — final-only, roll-number normalizer
+      const startRollListener = (currentGen) => {
+        if (currentGen !== loginStateId) return;
+        console.log("[LOGIN ROLL STT START]");
+        AutoScribeSpeech.startListening(
+          (cleanedRoll, isFinal) => {
+            if (!isFinal) return;                       // ignore interim results for roll number
+            if (currentGen !== loginStateId) return;    // discard stale callbacks
+            if (!cleanedRoll || !cleanedRoll.trim()) return;
+            const roll = cleanedRoll.trim();
+            console.log("[LOGIN] Roll number (final):", roll);
+            rollNumber = roll;
+            document.getElementById('studentIdInput').value = rollNumber;
+            AutoScribeSpeech.stopListening();
+            transitionToLoginState('CONFIRM_ROLL');
+          },
+          null,   // null onCommand — no exam commands during roll-number capture
+          { lang: 'en-IN', continuous: false, interimResults: false, isRollMode: true }
+        );
+      };
+
+      const handleSttError = (currentGen, err) => {
+        if (currentGen !== loginStateId) return;
+
+        retryCount++;
+        console.log("[LOGIN STT ERROR]", err || "unclear input", `(Retry ${retryCount}/2)`);
+
+        if (retryCount <= 2) {
+          updateStatusDisplay("I didn't hear you clearly. Please say it again.");
+          AutoScribeSpeech.stopListening();
+          const prompt = (currentLoginState === 'SELECT_VOICE') ? "Please say male or female." :
+                         (currentLoginState === 'LISTEN_ROLL') ? "Please say your roll number." :
+                         (currentLoginState === 'CONFIRM_ROLL') ? `I heard roll number ${rollNumber}. Is that correct? Say yes or no.` :
+                         (currentLoginState === 'LISTEN_NAME') ? "Please say your name. You can spell it letter by letter." :
+                         (currentLoginState === 'CONFIRM_NAME') ? `I heard your name as ${studentName}. Is that correct? Say yes or no.` :
+                         "Say login or confirm to start.";
+
+          AutoScribeSpeech.speakText(prompt, selectedVoice, '1.0', () => {
+            if (currentGen === loginStateId) {
+              startLoginListener(currentGen);
+            }
+          });
+        } else {
+          updateStatusDisplay("⚠️ Maximum voice retries reached. Please type your details or click Login to continue.");
+          AutoScribeSpeech.stopListening();
+        }
+      };
+
+      const handleSttResult = (currentGen, rawText, isFinal) => {
+        if (currentGen !== loginStateId) return;
+        if (!rawText || !rawText.trim()) return;
+
+        const transcript = rawText.trim();
+        console.log(`[LOGIN STT RESULT State:${currentLoginState}] "${transcript}"`);
+
+        // Step 1: SELECT_VOICE ("Please choose your preferred voice. Say male or female.")
+        if (currentLoginState === 'SELECT_VOICE') {
+          const lower = transcript.toLowerCase();
+          if (lower.includes('female') || lower.includes('woman') || lower.includes('girl')) {
+            selectedVoice = 'female';
+            document.getElementById('genderSelect').value = 'female';
+            localStorage.setItem('autoscribe_voice_gender', 'female');
+            console.log("[LOGIN] Voice selected: female");
+            AutoScribeSpeech.stopListening();
+            transitionToLoginState('LISTEN_ROLL', "Female voice selected. Please say your roll number.");
+          } else if (lower.includes('male') || lower.includes('man') || lower.includes('boy')) {
+            selectedVoice = 'male';
+            document.getElementById('genderSelect').value = 'male';
+            localStorage.setItem('autoscribe_voice_gender', 'male');
+            console.log("[LOGIN] Voice selected: male");
+            AutoScribeSpeech.stopListening();
+            transitionToLoginState('LISTEN_ROLL', "Male voice selected. Please say your roll number.");
+          } else {
+            handleSttError(currentGen, "Unclear voice selection");
+          }
+          return;
+        }
+
+        // Step 2: LISTEN_ROLL is handled by startRollListener (dedicated roll-number callback).
+        // handleSttResult should NOT process LISTEN_ROLL — it is managed by startRollListener.
+        // This guard prevents any stale interim callback from accidentally processing roll input.
+        if (currentLoginState === 'LISTEN_ROLL') {
+          return; // roll number handled exclusively by startRollListener
+        }
+
+        // Step 3: CONFIRM_ROLL ("I heard roll number 25. Is that correct? Say yes or no.")
+        if (currentLoginState === 'CONFIRM_ROLL') {
+          if (isYes(transcript)) {
+            AutoScribeSpeech.stopListening();
+            transitionToLoginState('LISTEN_NAME');
+          } else if (isNo(transcript)) {
+            AutoScribeSpeech.stopListening();
+            transitionToLoginState('LISTEN_ROLL', "Okay. Please say your roll number again.");
+          } else {
+            handleSttError(currentGen, "Unclear confirmation");
+          }
+          return;
+        }
+
+        // Step 4: LISTEN_NAME ("Please say your name. You can spell it letter by letter.")
+        if (currentLoginState === 'LISTEN_NAME') {
+          const parsedName = AutoScribeSpeech.parseSpokenNameOrSpelling(transcript) || AutoScribeSpeech.normalizeFullName(transcript) || transcript.trim();
+          if (parsedName && parsedName.length >= 1) {
+            studentName = parsedName;
+            document.getElementById('studentNameInput').value = studentName;
+            console.log("[LOGIN] Name:", studentName);
+            AutoScribeSpeech.stopListening();
+            transitionToLoginState('CONFIRM_NAME');
+          } else {
+            handleSttError(currentGen, "Unclear student name");
+          }
+          return;
+        }
+
+        // Step 5: CONFIRM_NAME ("I heard your name as Swaathi B. Is that correct? Say yes or no.")
+        if (currentLoginState === 'CONFIRM_NAME') {
+          if (isYes(transcript)) {
+            AutoScribeSpeech.stopListening();
+            transitionToLoginState('FINAL_CONFIRM');
+          } else if (isNo(transcript)) {
+            AutoScribeSpeech.stopListening();
+            transitionToLoginState('LISTEN_NAME', "Okay. Please spell your name again.");
+          } else {
+            handleSttError(currentGen, "Unclear confirmation");
+          }
+          return;
+        }
+
+        // Step 6: FINAL_CONFIRM ("Your roll number is 25 and your name is Swaathi B. Say login or confirm to start.")
+        if (currentLoginState === 'FINAL_CONFIRM') {
+          const lower = transcript.toLowerCase();
+          if (isYes(transcript) || lower.includes('login') || lower.includes('log in') || lower.includes('confirm') || lower.includes('start')) {
+            AutoScribeSpeech.stopListening();
+            transitionToLoginState('COMPLETE');
+          } else {
+            handleSttError(currentGen, "Please say login or confirm.");
+          }
+          return;
+        }
+      };
+
+      const transitionToLoginState = (newState, customPrompt = null) => {
+        loginStateId++;
+        const currentGen = loginStateId;
+        retryCount = 0;
+
+        console.log("[LOGIN TRANSITION]", currentLoginState, "→", newState);
+        currentLoginState = newState;
+
+        const updateStepProgress = (state) => {
+          const map = {
+            'SELECT_VOICE': 'stepVoice',
+            'LISTEN_ROLL': 'stepRoll',
+            'CONFIRM_ROLL': 'stepConfirmRoll',
+            'LISTEN_NAME': 'stepName',
+            'CONFIRM_NAME': 'stepConfirmName',
+            'FINAL_CONFIRM': 'stepFinal',
+            'COMPLETE': 'stepFinal'
+          };
+          const order = ['stepVoice', 'stepRoll', 'stepConfirmRoll', 'stepName', 'stepConfirmName', 'stepFinal'];
+          const activeId = map[state];
+          const activeIdx = order.indexOf(activeId);
+          order.forEach((id, idx) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('active', 'completed');
+            if (idx === activeIdx) el.classList.add('active');
+            else if (idx < activeIdx) el.classList.add('completed');
+          });
+        };
+        updateStepProgress(newState);
+
+        AutoScribeSpeech.stopSpeaking();
+        AutoScribeSpeech.stopListening();
+
+        let promptText = '';
+        if (newState === 'SELECT_VOICE') {
+          promptText = customPrompt || "Please choose your preferred voice. Say male or female.";
+          updateStatusDisplay('🎙️ <strong>Voice Selection:</strong> Please choose your preferred voice. Say male or female.');
+        } else if (newState === 'LISTEN_ROLL') {
+          promptText = customPrompt || "Please say your roll number.";
+          updateStatusDisplay('🎙️ <strong>Listening for Roll Number...</strong> Please say your complete roll number, including any letters.');
+        } else if (newState === 'CONFIRM_ROLL') {
+          promptText = customPrompt || `I heard roll number ${rollNumber}. Is that correct? Say yes or no.`;
+          updateStatusDisplay(`🎧 <strong>Confirming Roll Number:</strong> "${rollNumber}". Say yes or no.`);
+        } else if (newState === 'LISTEN_NAME') {
+          promptText = customPrompt || "Please say your name. You can spell it letter by letter.";
+          updateStatusDisplay('🎙️ <strong>Listening for Name:</strong> Please say your name or spell it letter by letter.');
+        } else if (newState === 'CONFIRM_NAME') {
+          promptText = customPrompt || `I heard your name as ${studentName}. Is that correct? Say yes or no.`;
+          updateStatusDisplay(`🎧 <strong>Confirming Name:</strong> "${studentName}". Say yes or no.`);
+        } else if (newState === 'FINAL_CONFIRM') {
+          promptText = customPrompt || `Your roll number is ${rollNumber} and your name is ${studentName}. Say login or confirm to start.`;
+          updateStatusDisplay(`🚀 <strong>Final Confirmation:</strong> Roll: ${rollNumber}, Name: ${studentName}. Say login or confirm.`);
+        } else if (newState === 'COMPLETE') {
+          validateAndLogin();
+          return;
+        }
+
+        if (promptText) {
+          console.log(`[LOGIN TTS START (${selectedVoice})]`, promptText);
+
+          AutoScribeSpeech.speakText(promptText, selectedVoice, '1.0', () => {
+            console.log("[LOGIN TTS END]");
+            if (currentGen !== loginStateId) return;
+            // Use dedicated roll-number recognition for LISTEN_ROLL
+            if (currentLoginState === 'LISTEN_ROLL') {
+              startRollListener(currentGen);
+            } else {
+              startLoginListener(currentGen);
+            }
+          });
+        }
+      };
+
+      const showValidationError = (msg) => {
+        const errorEl = document.getElementById('loginErrorMsg');
+        if (errorEl) {
+          errorEl.textContent = msg;
+          errorEl.style.display = 'block';
+        }
+        updateStatusDisplay(`⚠️ <strong>Validation Error:</strong> ${msg}`);
+        AutoScribeSpeech.speakText(msg, selectedVoice, '1.0');
+      };
+
+      const validateAndLogin = () => {
+        const errorEl = document.getElementById('loginErrorMsg');
+        if (errorEl) {
+          errorEl.style.display = 'none';
+          errorEl.textContent = '';
+        }
+
+        const nameInputEl = document.getElementById('studentNameInput');
+        const rollInputEl = document.getElementById('studentIdInput');
+
+        const cleanName = (nameInputEl ? nameInputEl.value : studentName || '').trim();
+        const cleanRoll = String(rollInputEl ? rollInputEl.value : rollNumber || '').trim();
+
+        if (!cleanName && !cleanRoll) {
+          showValidationError("Please enter your name.");
+          return false;
+        }
+        if (!cleanName) {
+          showValidationError("Please enter your name.");
+          return false;
+        }
+        if (!cleanRoll) {
+          showValidationError("Please enter your roll number.");
+          return false;
+        }
+
+        studentName = cleanName;
+        rollNumber = cleanRoll;
+
+        if (nameInputEl) nameInputEl.value = studentName;
+        if (rollInputEl) rollInputEl.value = rollNumber;
+
+        performLoginComplete();
+        return true;
+      };
+
+      const performLoginComplete = () => {
+        currentLoginState = 'COMPLETE';
+        console.log("[LOGIN STATE]", currentLoginState);
+
+        AutoScribeApp.loginUser(rollNumber, studentName, selectedVoice, '1.0');
+        updateStatusDisplay(`🚀 <strong>Login Successful!</strong> Welcome ${studentName} (${rollNumber}). Opening dashboard...`);
+
+        AutoScribeSpeech.stopListening();
+        AutoScribeSpeech.speakText(`Login successful. Welcome ${studentName}. Opening dashboard.`, selectedVoice, '1.0', () => {
+          window.location.href = 'dashboard.html';
+        });
+
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 1200);
+      };
+
+      // Initialize hands-free login flow on page load
+      let flowStarted = false;
+      const initLoginFlow = () => {
+        if (flowStarted) return;
+        flowStarted = true;
+        transitionToLoginState('SELECT_VOICE');
+      };
+
+      setTimeout(initLoginFlow, 400);
+
+      const triggerGesture = () => {
+        AutoScribeSpeech.getAudioContext();
+        initLoginFlow();
+      };
+
+      document.body.addEventListener('click', triggerGesture);
+      document.body.addEventListener('keydown', triggerGesture);
+
+      window.addEventListener('beforeunload', () => {
+        AutoScribeSpeech.stopSpeaking();
+        AutoScribeSpeech.stopListening();
+      });
+
+      document.getElementById('loginForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        validateAndLogin();
+      });
+    });
+  </script>
+</body>
+</html>
