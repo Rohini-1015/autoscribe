@@ -1,12 +1,11 @@
 {
   "version": 2,
   "cleanUrls": true,
-  "functions": {
-    "api/index.js": {
-      "includeFiles": "*.html, css/**, js/**, autoscribe.db, config/**, routes/**, services/**, middleware/**"
-    }
-  },
   "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
     {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
