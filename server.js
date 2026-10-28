@@ -51,24 +51,33 @@ app.use('/api/answers', answerRoutes);
 app.use('/api/submissions', submissionRoutes);
 
 // Page Routes for Local and Vercel Deployment
-const sendPage = (pageName, res) => {
-  const fileInDir = path.join(staticDir, pageName);
-  const fileInCwd = path.join(rootDir, pageName);
+const sendPage = (pageName, req, res) => {
   const fs = require('fs');
-  if (fs.existsSync(fileInDir)) {
-    return res.sendFile(fileInDir);
-  } else if (fs.existsSync(fileInCwd)) {
-    return res.sendFile(fileInCwd);
+  const candidates = [
+    path.resolve(staticDir, pageName),
+    path.resolve(rootDir, pageName),
+    path.join(__dirname, pageName),
+    path.join(__dirname, '..', pageName),
+    path.join(process.cwd(), pageName),
+    path.join(process.cwd(), '..', pageName)
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+      return res.sendFile(candidate);
+    }
   }
-  return res.status(404).send(`Page ${pageName} not found.`);
+
+  // If running on Vercel serverless where static files are served via CDN
+  return res.redirect('/' + pageName);
 };
 
-app.get(['/', '/index', '/index.html'], (req, res) => sendPage('index.html', res));
-app.get(['/login', '/login.html'], (req, res) => sendPage('login.html', res));
-app.get(['/dashboard', '/dashboard.html'], (req, res) => sendPage('dashboard.html', res));
-app.get(['/exam', '/exam.html'], (req, res) => sendPage('exam.html', res));
-app.get(['/admin', '/admin.html'], (req, res) => sendPage('admin.html', res));
-app.get(['/confirmation', '/confirmation.html'], (req, res) => sendPage('confirmation.html', res));
+app.get(['/', '/index', '/index.html'], (req, res) => sendPage('index.html', req, res));
+app.get(['/login', '/login.html'], (req, res) => sendPage('login.html', req, res));
+app.get(['/dashboard', '/dashboard.html'], (req, res) => sendPage('dashboard.html', req, res));
+app.get(['/exam', '/exam.html'], (req, res) => sendPage('exam.html', req, res));
+app.get(['/admin', '/admin.html'], (req, res) => sendPage('admin.html', req, res));
+app.get(['/confirmation', '/confirmation.html'], (req, res) => sendPage('confirmation.html', req, res));
 
 
 

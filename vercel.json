@@ -1,11 +1,12 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "autoscribe.db, **/*.html"
+    }
+  },
   "rewrites": [
-    {
-      "source": "/",
-      "destination": "/index.html"
-    },
     {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
